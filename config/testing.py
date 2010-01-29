@@ -12,7 +12,7 @@ from config import settings
 logging.config.fileConfig("config/test_logging.conf")
 
 settings.relay = Relay(host=settings.relay_config['host'], 
-                       port=settings.relay_config['port'], debug=1)
+                       port=settings.relay_config['port'], debug=0)
 
 settings.receiver = None
 
