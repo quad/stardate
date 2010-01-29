@@ -1,5 +1,8 @@
 import datetime
 import logging
+import random
+
+from pkg_resources import resource_stream
 
 from lamson import view
 from lamson.routing import route
@@ -7,9 +10,17 @@ from lamson.routing import route
 from config.settings import BLOG_ADDR, relay, confirm
 
 
+WELCOME_QUOTES = [l.strip()
+                  for l in resource_stream(__name__, 'data/welcome_quotes.txt')]
+CONFIRM_QUOTES = [l.strip()
+                  for l in resource_stream(__name__, 'data/confirm_quotes.txt')]
+
+
 @route('punchit@(host)')
 def START(message, host):
+    quotes = WELCOME_QUOTES
     confirm.send(relay, 'punchit', message, 'start_confirm.msg', locals())
+
     return CONFIRMING
 
 
@@ -25,7 +36,7 @@ def CONFIRMING(message, id_number, host):
                                'welcome.msg',
                                From='noreply@%(host)s',
                                To=message['from'],
-                               Subject="I'm very much a pilot...")
+                               Subject=random.choice(CONFIRM_QUOTES))
         relay.deliver(welcome)
 
         logging.info("Confirmed %s", message['from'])

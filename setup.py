@@ -11,7 +11,10 @@ setup(
 
     packages=find_packages(exclude='tests'),
     package_data={
-        'stardate': ['templates/*.msg'],
+        'stardate': [
+            'data/*.txt',
+            'templates/*.msg',
+        ],
     },
 
     install_requires=[
