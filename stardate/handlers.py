@@ -48,20 +48,20 @@ def CONFIRMING(message, id_number, host):
         return CONFIRMING
 
 
-@route("(date)\+(id_number)@(host)", date='\d{4}\.\d{2}\.\d{2}', id_number='[a-z0-9]+')
+@route("(date)-confirm-(id_number)@(host)", date='\d{4}\.\d{2}\.\d{2}', id_number='[a-z0-9]+')
 def LOG(message, date, id_number, host):
-    d = datetime.datetime.strptime(date, '%Y.%m.%d')
+    notification = confirm.verify(date, message['from'], id_number)
 
-    if d > datetime.datetime.now():
-        logging.warning("Space-time anomaly detected around %s.", message['from'])
-    # TODO: Check the id_number validity.
+    if notification:
+        d = datetime.datetime.strptime(date, '%Y.%m.%d')
+
+        message['date'] = d.strftime('%a, %d %b %Y %H:%M:%S +0000')
+        message['to'] = BLOG_ADDR
+
+        relay.deliver(message)
+
+        logging.info("%s's Log, supplemental. Stardate: %s", message['from'], d)
     else:
-        logging.debug("Captain's Log from %s on date: %s", message['from'], message['date'])
-
-    # Appropriately date the entry.
-    message['date'] = d.strftime('%a, %d %b %Y %H:%M:%S +0000')
-    message['to'] = BLOG_ADDR
-
-    relay.deliver(message)
+        logging.warning("Transphasic shields holding under assault from %s", message['from'])
 
     return LOG
