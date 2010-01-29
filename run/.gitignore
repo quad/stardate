@@ -1,0 +1,7 @@
+*.*-*
+*.lock
+*.pid
+
+pending/
+queue/
+undeliverable/
