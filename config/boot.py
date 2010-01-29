@@ -2,7 +2,7 @@ import jinja2
 import logging
 import logging.config
 
-from lamson import view, queue
+from lamson import confirm, view, queue
 from lamson.routing import Router
 from lamson.server import Relay, SMTPReceiver
 
@@ -16,6 +16,9 @@ settings.relay = Relay(host=settings.relay_config['host'],
 
 settings.receiver = SMTPReceiver(settings.receiver_config['host'],
                                  settings.receiver_config['port'])
+
+settings.confirm = confirm.ConfirmationEngine('run/pending',
+                                              confirm.ConfirmationStorage())
 
 Router.defaults(**settings.router_defaults)
 Router.load(settings.handlers)

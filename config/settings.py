@@ -9,9 +9,3 @@ receiver_config = {'host': 'localhost', 'port': 8823}
 handlers = ['stardate.handlers']
 router_defaults = {'host': '.+'}
 template_config = {'dir': 'stardate', 'module': 'templates'}
-
-# confirm subscriptions
-from lamson import confirm
-
-confirm = confirm.ConfirmationEngine('run/pending',
-                                     confirm.ConfirmationStorage())
