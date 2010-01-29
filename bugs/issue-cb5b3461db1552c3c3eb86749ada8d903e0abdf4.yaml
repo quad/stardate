@@ -1,0 +1,21 @@
+--- !ditz.rubyforge.org,2008-03-06/issue 
+title: Persist routing states
+desc: |-
+  The ShelveStorage component will almost certainly work just fine.
+  
+  http://lamsonproject.org/docs/writing_a_state_storage.html
+type: :bugfix
+component: stardate
+release: 
+reporter: Scott Robinson <scott@quadhome.com>
+status: :unstarted
+disposition: 
+creation_time: 2010-01-29 08:09:25.393010 Z
+references: []
+
+id: cb5b3461db1552c3c3eb86749ada8d903e0abdf4
+log_events: 
+- - 2010-01-29 08:09:27.900742 Z
+  - Scott Robinson <scott@quadhome.com>
+  - created
+  - ""

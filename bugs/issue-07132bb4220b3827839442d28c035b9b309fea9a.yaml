@@ -1,0 +1,22 @@
+--- !ditz.rubyforge.org,2008-03-06/issue 
+title: Persist confirmation
+desc: |-
+  Probably easiest to use a shelve backend.
+  
+  http://lamsonproject.org/docs/writing_a_state_storage.html
+type: :bugfix
+component: stardate
+release: 
+reporter: Scott Robinson <scott@quadhome.com>
+status: :unstarted
+disposition: 
+creation_time: 2010-01-29 08:12:59.051811 Z
+references: []
+
+id: 07132bb4220b3827839442d28c035b9b309fea9a
+log_events: 
+- - 2010-01-29 08:13:00.283985 Z
+  - Scott Robinson <scott@quadhome.com>
+  - created
+  - ""
+git_branch: 

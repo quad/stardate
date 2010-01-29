@@ -1,0 +1,24 @@
+--- !ditz.rubyforge.org,2008-03-06/issue 
+title: Cronjob entry point for reminders
+desc: |-
+  The reminder mails are triggered by a cronjob calling a script.
+  
+  The script should be idempotent.
+  
+  Use the lamson configuration and infrastructure to send mail.
+type: :bugfix
+component: stardate
+release: 
+reporter: Scott Robinson <scott@quadhome.com>
+status: :unstarted
+disposition: 
+creation_time: 2010-01-29 08:19:14.072915 Z
+references: []
+
+id: 4e1acdd3c311db5772ac3c5ac1f0c1f55306e1be
+log_events: 
+- - 2010-01-29 08:19:14.873336 Z
+  - Scott Robinson <scott@quadhome.com>
+  - created
+  - ""
+git_branch: 
