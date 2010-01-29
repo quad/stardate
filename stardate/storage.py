@@ -3,15 +3,17 @@ import threading
 
 from contextlib import nested
 
-from lamson.confirm import ConfirmationStorage
-from lamson.routing import StateStorage, ROUTE_FIRST_STATE
+import lamson.confirm
+import lamson.routing
+
+from lamson.routing import ROUTE_FIRST_STATE
 
 
 # WARNING: There's no way to pass an in-memory sqlite database between threads.
 # Use the lamson default stack if you need that.
 
 
-class SqliteConfirmationStorage(ConfirmationStorage):
+class ConfirmationStorage(lamson.confirm.ConfirmationStorage):
     SQL_CREATE_TABLE = """CREATE TABLE IF NOT EXISTS
         confirmations (
             key PRIMARY KEY,
@@ -60,7 +62,7 @@ class SqliteConfirmationStorage(ConfirmationStorage):
                          (self.key(target, from_address), expected_secret, pending_message_id))
 
 
-class SqliteStateStorage(StateStorage):
+class StateStorage(lamson.routing.StateStorage):
     SQL_CREATE_TABLE = """CREATE TABLE IF NOT EXISTS
         state (
             key NOT NULL,

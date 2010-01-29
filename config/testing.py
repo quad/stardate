@@ -7,7 +7,7 @@ from lamson.routing import Router
 from lamson.server import Relay
 
 from config import settings
-from sqlite_storage import SqliteConfirmationStorage, SqliteStateStorage
+from config.test_storage import confirm_storage, state_storage
 
 
 logging.config.fileConfig("config/test_logging.conf")
@@ -17,13 +17,14 @@ settings.relay = Relay(host=settings.relay_config['host'],
 
 settings.receiver = None
 
-settings.confirm = confirm.ConfirmationEngine('run/pending',
-                                              SqliteConfirmationStorage(':memory:'))
+settings.confirm = confirm.ConfirmationEngine(
+    settings.confirmation_config['queue'],
+    confirm_storage)
 
 Router.defaults(**settings.router_defaults)
 Router.load(settings.handlers)
 Router.RELOAD = True
-Router.STATE_STORE = SqliteStateStorage(':memory:')
+Router.STATE_STORE = state_storage
 Router.LOG_EXCEPTIONS = False
 
 view.LOADER = jinja2.Environment(

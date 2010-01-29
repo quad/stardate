@@ -7,7 +7,7 @@ from lamson.routing import Router
 from lamson.server import Relay, SMTPReceiver
 
 from config import settings
-from sqlite_storage import SqliteConfirmationStorage, SqliteStateStorage
+from config.storage import confirm_storage, state_storage
 
 
 logging.config.fileConfig('config/logging.conf')
@@ -18,13 +18,14 @@ settings.relay = Relay(host=settings.relay_config['host'],
 settings.receiver = SMTPReceiver(settings.receiver_config['host'],
                                  settings.receiver_config['port'])
 
-settings.confirm = confirm.ConfirmationEngine('run/pending',
-                                              SqliteConfirmationStorage('run/db'))
+settings.confirm = confirm.ConfirmationEngine(
+    settings.confirmation_config['queue'],
+    confirm_storage)
 
 Router.defaults(**settings.router_defaults)
 Router.load(settings.handlers)
 Router.RELOAD = True
-Router.STATE_STORE = SqliteStateStorage('run/db')
+Router.STATE_STORE = state_storage
 Router.UNDELIVERABLE_QUEUE = queue.Queue('run/undeliverable')
 
 view.LOADER = jinja2.Environment(
