@@ -1,0 +1,22 @@
+--- !ditz.rubyforge.org,2008-03-06/issue 
+title: Expire stale messages from the pending queue
+desc: |-
+  Both subscription requests and reminder mails remain in the pending queue after verification.
+  
+  The cronjob script should scan the pending queue and expire messages.
+type: :bugfix
+component: stardate
+release: 
+reporter: Scott Robinson <scott@quadhome.com>
+status: :unstarted
+disposition: 
+creation_time: 2010-01-29 08:41:51.512349 Z
+references: []
+
+id: 348cd498f82c0e4dacc1ad51cde9bb193281a7cc
+log_events: 
+- - 2010-01-29 08:41:52.716830 Z
+  - Scott Robinson <scott@quadhome.com>
+  - created
+  - ""
+git_branch: 
