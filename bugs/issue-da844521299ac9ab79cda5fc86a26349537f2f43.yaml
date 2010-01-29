@@ -1,0 +1,22 @@
+--- !ditz.rubyforge.org,2008-03-06/issue 
+title: Unify RLocks in sqlite storage layer
+desc: |-
+  The RLocks are on a per-storage class basis.
+  
+  As there is a per-thread connection pool, the locking should be on a per-thread/per-connection basis.
+type: :bugfix
+component: stardate
+release: 
+reporter: Scott Robinson <scott@quadhome.com>
+status: :unstarted
+disposition: 
+creation_time: 2010-01-29 23:20:14.354586 Z
+references: []
+
+id: da844521299ac9ab79cda5fc86a26349537f2f43
+log_events: 
+- - 2010-01-29 23:20:15.265434 Z
+  - Scott Robinson <scott@quadhome.com>
+  - created
+  - ""
+git_branch: 
