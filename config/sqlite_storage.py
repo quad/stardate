@@ -7,13 +7,33 @@ from lamson.confirm import ConfirmationStorage
 from lamson.routing import StateStorage, ROUTE_FIRST_STATE
 
 
+# WARNING: There's no way to pass an in-memory sqlite database between threads.
+# Use the lamson default stack if you need that.
+
+
 class SqliteConfirmationStorage(ConfirmationStorage):
+    SQL_CREATE_TABLE = """CREATE TABLE IF NOT EXISTS
+        confirmations (
+            key PRIMARY KEY,
+            expected_secret NOT NULL,
+            pending_message_id NOT NULL)"""
+
+
     def __init__(self, database_path):
+        self.database_path = database_path
+        self.db = threading.local()
         self.lock = threading.RLock()
-        self.connection = sqlite3.connect(database_path)
 
         with self.connection as conn:
-            conn.execute('CREATE TABLE IF NOT EXISTS confirmations (key PRIMARY KEY, expected_secret NOT NULL, pending_message_id NOT NULL)')
+            conn.execute(self.SQL_CREATE_TABLE)
+
+
+    @property
+    def connection(self):
+        if not hasattr(self.db, 'connection'):
+            self.db.connection = sqlite3.connect(self.database_path)
+
+        return self.db.connection
 
 
     def clear(self):
@@ -41,33 +61,45 @@ class SqliteConfirmationStorage(ConfirmationStorage):
 
 
 class SqliteStateStorage(StateStorage):
+    SQL_CREATE_TABLE = """CREATE TABLE IF NOT EXISTS
+        state (
+            key NOT NULL,
+            sender NOT NULL,
+            state NOT NULL)"""
+
+
     def __init__(self, database_path):
+        self.database_path = database_path
+        self.db = threading.local()
         self.lock = threading.RLock()
-        self.connection = sqlite3.connect(database_path)
 
         with self.connection as conn:
-            conn.execute('CREATE TABLE IF NOT EXISTS state (key PRIMARY KEY, state NOT NULL)')
+            conn.execute(self.SQL_CREATE_TABLE)
 
 
-    def key(self, key, sender):
-        return repr((key, sender))
+    @property
+    def connection(self):
+        if not hasattr(self.db, 'connection'):
+            self.db.connection = sqlite3.connect(self.database_path)
+
+        return self.db.connection
 
 
     def get(self, key, sender):
         with nested(self.lock, self.connection) as (lock, conn):
-            c = conn.execute('SELECT state FROM state WHERE key=? LIMIT 1',
-                             (self.key(key, sender),))
+            c = conn.execute('SELECT state FROM state WHERE key=? AND sender=? LIMIT 1',
+                             (key, sender))
             v = c.fetchone()
             return v[0] if v else ROUTE_FIRST_STATE
 
 
     def set(self, key, sender, state):
         with nested(self.lock, self.connection) as (lock, conn):
-            if state == ROUTE_FIRST_STATE:
-                conn.execute('DELETE FROM state WHERE key=?', (self.key(key, sender),))
-            else:
-                conn.execute('INSERT OR REPLACE INTO state (key, state) VALUES (?, ?)',
-                             (self.key(key, sender), state))
+            conn.execute('DELETE FROM state WHERE key=? AND sender=?', (key, sender))
+
+            if state != ROUTE_FIRST_STATE:
+                conn.execute('INSERT INTO state (key, sender, state) VALUES (?, ?, ?)',
+                             (key, sender, state))
 
 
     def clear(self):
