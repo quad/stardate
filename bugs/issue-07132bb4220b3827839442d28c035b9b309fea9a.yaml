@@ -8,8 +8,8 @@ type: :bugfix
 component: stardate
 release: 
 reporter: Scott Robinson <scott@quadhome.com>
-status: :unstarted
-disposition: 
+status: :closed
+disposition: :fixed
 creation_time: 2010-01-29 08:12:59.051811 Z
 references: []
 
@@ -18,5 +18,9 @@ log_events:
 - - 2010-01-29 08:13:00.283985 Z
   - Scott Robinson <scott@quadhome.com>
   - created
+  - ""
+- - 2010-01-29 10:52:26.719574 Z
+  - Scott Robinson <scott@quadhome.com>
+  - closed with disposition fixed
   - ""
 git_branch: 
