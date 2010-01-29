@@ -7,73 +7,102 @@ from lamson.testing import RouterConversation, clear_queue, delivered, queue
 client = RouterConversation("jim@localhost", "requests_tests")
 
 
-def test_rejects_unexpected():
-    """Reject unexpected messages."""
-
-    client.begin()
-    client.say("random@localhost", "Unexpected messages should be dropped.")
-    assert queue().count() == 0, "Responding to unexpecte messages?!"
+class TestDeflection:
+    def setUp(self):
+        client.begin()
 
 
-def test_punching_it():
-    """Get a confirmation message back upon subscription request."""
+    def test_rejects_unexpected(self):
+        """Reject unexpected messages."""
 
-    client.begin()
-    confirm = client.say("punchit@localhost", "First message!",
-                         expect="punchit-confirm-[a-z0-9]+@localhost")
-    assert not delivered("First message!"), "The subscription message was re-sent early!"
-
-    client.say(confirm['from'], "Let's go!",
-               expect="noreply@localhost")
-    assert delivered("First message!"), "The subscription message wasn't re-sent!"
+        client.say("random@localhost", "Unexpected messages should be dropped.")
+        assert queue().count() == 0, "Responding to unexpected messages?!"
 
 
-def test_rejects_unexpected_confirms():
-    """Reject unexpected confirmation messages."""
+    def test_rejects_unexpected_confirms(self):
+        """Reject unexpected confirmation messages."""
 
-    client.begin()
-    client.say("punchit-confirm-abc123@localhost", "Unexpected confirmations should be dropped.")
-    assert queue().count() == 0, "Accepting random confirmation messages?!"
-
-
-def test_rejects_unauthorized_logs():
-    """Reject unauthorized logs."""
-
-    client.begin()
-    client.say("1900.01.01-confirm-abc123@localhost", "Unauthorized logs should be dropped.")
-    assert queue().count() == 0, "Accepting unauthorized logs?!"
+        client.say("punchit-confirm-abc123@localhost", "Unexpected confirmations should be dropped.")
+        assert queue().count() == 0, "Accepting unexpected confirmation messages?!"
 
 
-def confirm_subscription(client):
-    """Confirm a subscription."""
+    def test_rejects_unauthorized_logs(self):
+        """Reject unauthorized logs."""
 
-    client.begin()
-    c = client.say("punchit@localhost", "First message!",
-                   expect="punchit-confirm-[a-z0-9]+@localhost")
-    client.say(c['from'], "Let's go!",
-               expect="noreply@localhost")
-    clear_queue()
+        client.say("1900.01.01-confirm-abc123@localhost", "Unauthorized logs should be dropped.")
+        assert queue().count() == 0, "Accepting unauthorized logs?!"
 
 
-def test_accepts_logs():
-    """Accepts and forwards expected logs."""
-
-    confirm_subscription(client)
-
-    target = '1900.01.01'
-
-    # Register an expected log.
-    m = MailRequest('localhost', client.From, target + '@localhost', '')
-    addr = confirm.register(target, m)
-
-    f = client.say(addr + '@localhost', "A log entry", expect=BLOG_ADDR)
-    assert f['from'] == client.From and "A log entry" in f.body(), f
+class TestDocking:
+    def setUp(self):
+        client.begin()
 
 
-def test_rejects_unexpected_logs():
-    """Rejects unexpected logs."""
+    def tearDown(self):
+        confirm.storage.clear()
 
-    confirm_subscription(client)
 
-    client.say("1900.01.01-confirm-abc123@localhost", "Unexpected logs should be dropped.")
-    assert queue().count() == 0, "Accepting unexpected logs?!"
+    def test_punching_it(self):
+        """Get a confirmation message back upon subscription request."""
+
+        c = client.say("punchit@localhost", "First message!",
+                       expect="punchit-confirm-[a-z0-9]+@localhost")
+        assert not delivered("First message!"), "The subscription message was re-sent early!"
+
+        client.say(c['from'], "Let's go!",
+                   expect="noreply@localhost")
+        assert delivered("First message!"), "The subscription message wasn't re-sent!"
+
+
+    def test_rejects_unauthorized_confirms(self):
+        """Reject unauthorized confirmation messages."""
+
+        c = client.say("punchit@localhost", "First message!",
+                       expect="punchit-confirm-[a-z0-9]+@localhost")
+        clear_queue()
+
+        client.say("punchit-confirm-abc123@localhost", "Let's go!")
+        assert queue().count() == 0, "Accepting unauthorized confirmation messages?!"
+
+
+class TestTransmission:
+    def setUp(self):
+        client.begin()
+
+
+    def tearDown(self):
+        confirm.storage.clear()
+
+
+    def confirm_subscription(self):
+        """Confirm a subscription."""
+
+        c = client.say("punchit@localhost", "First message!",
+                       expect="punchit-confirm-[a-z0-9]+@localhost")
+        client.say(c['from'], "Let's go!",
+                   expect="noreply@localhost")
+        clear_queue()
+
+
+    def test_accepts_logs(self):
+        """Accepts and forwards expected logs."""
+
+        self.confirm_subscription()
+
+        target = '1900.01.01'
+
+        # Register an expected log.
+        m = MailRequest('localhost', client.From, target + '@localhost', '')
+        addr = confirm.register(target, m)
+
+        f = client.say(addr + '@localhost', "A log entry", expect=BLOG_ADDR)
+        assert f['from'] == client.From and "A log entry" in f.body(), f
+
+
+    def test_rejects_unexpected_logs(self):
+        """Rejects unexpected logs."""
+
+        self.confirm_subscription()
+
+        client.say("1900.01.01-confirm-abc123@localhost", "Unexpected logs should be dropped.")
+        assert queue().count() == 0, "Accepting unexpected logs?!"
