@@ -1,3 +1,4 @@
+import logging
 import sqlite3
 import threading
 
@@ -9,8 +10,22 @@ import lamson.routing
 from lamson.routing import ROUTE_FIRST_STATE
 
 
-# WARNING: There's no way to pass an in-memory sqlite database between threads.
-# Use the lamson default stack if you need that.
+_connection_pool = threading.local()
+_connection_pool.dbs = {}
+
+def _get_connection(self):
+    if not hasattr(_connection_pool, 'dbs'):
+        _connection_pool.dbs = {}
+
+        # WARNING: sqlite3 lacks concurrency support for in-memory databases.
+        # If you need that, use the lamson default stack instead.
+
+        if self.database_path == ':memory:':
+            logging.warning('Multithreaded access on an in-memory sqlite database.')
+
+    return _connection_pool.dbs.setdefault(
+        self.database_path,
+        sqlite3.connect(self.database_path))
 
 
 class ConfirmationStorage(lamson.confirm.ConfirmationStorage):
@@ -24,23 +39,15 @@ class ConfirmationStorage(lamson.confirm.ConfirmationStorage):
                 PRIMARY KEY (target, from_address)
             )
     """
+    connection = property(_get_connection)
 
 
     def __init__(self, database_path):
         self.database_path = database_path
-        self.db = threading.local()
         self.lock = threading.RLock()
 
         with self.connection as conn:
             conn.execute(self.SQL_CREATE_TABLE)
-
-
-    @property
-    def connection(self):
-        if not hasattr(self.db, 'connection'):
-            self.db.connection = sqlite3.connect(self.database_path)
-
-        return self.db.connection
 
 
     def clear(self):
@@ -83,23 +90,15 @@ class StateStorage(lamson.routing.StateStorage):
                 PRIMARY KEY (key, sender)
             )
     """
+    connection = property(_get_connection)
 
 
     def __init__(self, database_path):
         self.database_path = database_path
-        self.db = threading.local()
         self.lock = threading.RLock()
 
         with self.connection as conn:
             conn.execute(self.SQL_CREATE_TABLE)
-
-
-    @property
-    def connection(self):
-        if not hasattr(self.db, 'connection'):
-            self.db.connection = sqlite3.connect(self.database_path)
-
-        return self.db.connection
 
 
     def get(self, key, sender):
