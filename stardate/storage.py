@@ -121,3 +121,11 @@ class StateStorage(lamson.routing.StateStorage):
     def clear(self):
         with nested(self.lock, self.connection) as (lock, conn):
             conn.execute('DELETE FROM state')
+
+
+    def active_addresses(self):
+        with nested(self.lock, self.connection) as (lock, conn):
+            addrs = conn.execute('SELECT sender FROM state WHERE key=? AND state=?',
+                                 ('stardate.handlers', 'LOG'))
+
+        return [addr for addr, in addrs.fetchall()] or []
