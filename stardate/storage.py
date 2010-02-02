@@ -1,3 +1,4 @@
+import datetime
 import logging
 import sqlite3
 import threading
@@ -78,6 +79,46 @@ class ConfirmationStorage(lamson.confirm.ConfirmationStorage):
                 ' (target, from_address, expected_secret, pending_message_id)'
                 ' VALUES (?, ?, ?, ?)',
                 (target, from_address, expected_secret, pending_message_id))
+
+
+class ReminderDatesStorage:
+    SQL_CREATE_TABLE = """CREATE TABLE IF NOT EXISTS
+        reminders (
+            address PRIMARY KEY,
+            year NOT NULL,
+            month NOT NULL,
+            day NOT NULL
+        )"""
+    connection = property(_get_connection)
+
+
+    def __init__(self, database_path):
+        self.database_path = database_path
+        self.lock = threading.RLock()
+
+        with self.connection as conn:
+            conn.execute(self.SQL_CREATE_TABLE)
+
+
+    def get(self, address):
+        with nested(self.lock, self.connection) as (lock, conn):
+            d = conn.execute('SELECT year, month, day FROM reminders'
+                             ' WHERE address=? LIMIT 1', (address,)).fetchone()
+
+            return datetime.date(*d) if d else None
+
+
+    def set(self, address, date):
+        with nested(self.lock, self.connection) as (lock, conn):
+            d = conn.execute(
+                'INSERT OR REPLACE INTO reminders (address, year, month, day)'
+                ' VALUES (?, ?, ?, ?)',
+                (address, date.year, date.month, date.day))
+
+
+    def clear(self):
+        with nested(self.lock, self.connection) as (lock, conn):
+            conn.execute('DELETE FROM reminders')
 
 
 class StateStorage(lamson.routing.StateStorage):
