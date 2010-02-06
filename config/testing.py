@@ -8,6 +8,8 @@ from lamson import confirm, view
 from lamson.routing import Router
 from lamson.server import Relay
 
+import config.test_storage
+
 from config import settings
 from config.test_storage import confirm_storage, state_storage
 
@@ -22,6 +24,8 @@ settings.receiver = None
 settings.confirm = confirm.ConfirmationEngine(
     settings.confirmation_config['queue'],
     confirm_storage)
+
+settings.storage = config.test_storage
 
 settings.scheduler = Scheduler()
 

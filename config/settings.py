@@ -1,3 +1,4 @@
+FROM_HOST = 'localhost'
 SECRET = 'CHANGEME'
 
 BLOG_ADDR = 'post@posterous.com'

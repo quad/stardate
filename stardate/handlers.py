@@ -8,13 +8,16 @@ from pkg_resources import resource_stream
 from lamson import view
 from lamson.routing import route
 
-from config.settings import BLOG_ADDR, SECRET, relay, confirm
+from config.settings import BLOG_ADDR, FROM_HOST, SECRET, relay, confirm, \
+        scheduler, storage
 
 
 WELCOME_QUOTES = [l.strip()
                   for l in resource_stream(__name__, 'data/welcome_quotes.txt')]
 CONFIRM_QUOTES = [l.strip()
                   for l in resource_stream(__name__, 'data/confirm_quotes.txt')]
+REMINDER_QUOTES = [l.strip()
+                   for l in resource_stream(__name__, 'data/reminder_quotes.txt')]
 
 
 @route('punchit@(host)')
@@ -66,3 +69,42 @@ def LOG(message, date, id_number, host):
         logging.warning("Transphasic shields holding under assault from %s", message['from'])
 
     return LOG
+
+
+@scheduler.interval_schedule(
+    days=1,
+    start_date=datetime.datetime.now() + datetime.timedelta(minutes=1))
+def engage():
+    today = datetime.date.today()
+
+    for addr in storage.state_storage.active_addresses():
+        def _(d):
+            d_str = d.strftime('%Y.%m.%d')
+            id_number = hmac.new(SECRET, addr).hexdigest()
+            host = FROM_HOST
+            quotes = REMINDER_QUOTES
+
+            reminder = view.respond(locals(),
+                                   'reminder.msg',
+                                   From='%(d_str)s-%(id_number)s@%(host)s',
+                                   To=addr,
+                                   Subject="Captain's Log, stardate %(d_str)%s")
+            relay.deliver(reminder)
+
+        d = storage.reminder_storage.get(addr)
+
+        if d:
+            logging.info("Crewman %s's back from an away mission %s", addr, d)
+
+            while d < today:
+                _(d)
+
+                d += datetime.timedelta(days=1)
+        else:
+            logging.info("Crewman %s reporting", addr)
+
+            _(today)
+
+        storage.reminder_storage.set(addr, today)
+
+    logging.info("We've made a full sweep of the system")
