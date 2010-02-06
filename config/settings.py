@@ -1,3 +1,5 @@
+SECRET = 'CHANGEME'
+
 BLOG_ADDR = 'post@posterous.com'
 
 # You may add additional parameters such as `username' and `password' if your

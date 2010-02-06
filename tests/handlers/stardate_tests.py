@@ -1,4 +1,7 @@
-from config.settings import BLOG_ADDR, confirm
+import datetime
+import hmac
+
+from config.settings import BLOG_ADDR, SECRET, confirm
 
 from lamson.mail import MailRequest
 from lamson.testing import RouterConversation, clear_queue, delivered, queue
@@ -29,7 +32,7 @@ class TestDeflection:
     def test_rejects_unauthorized_logs(self):
         """Reject unauthorized logs."""
 
-        client.say("1900.01.01-confirm-abc123@localhost", "Unauthorized logs should be dropped.")
+        client.say("1900.01.01-abc123@localhost", "Unauthorized logs should be dropped.")
         assert queue().count() == 0, "Accepting unauthorized logs?!"
 
 
@@ -70,10 +73,6 @@ class TestTransmission:
         client.begin()
 
 
-    def tearDown(self):
-        confirm.storage.clear()
-
-
     def confirm_subscription(self):
         """Confirm a subscription."""
 
@@ -89,13 +88,12 @@ class TestTransmission:
 
         self.confirm_subscription()
 
-        target = '1900.01.01'
-
         # Register an expected log.
-        m = MailRequest('localhost', client.From, target + '@localhost', '')
-        addr = confirm.register(target, m)
+        d = datetime.date.today()
+        addr = "%s-%s@localhost" % (d.strftime('%Y.%m.%d'),
+                                    hmac.new(SECRET, client.From).hexdigest())
 
-        f = client.say(addr + '@localhost', "A log entry", expect=BLOG_ADDR)
+        f = client.say(addr, "A log entry", expect=BLOG_ADDR)
         assert f['from'] == client.From and "A log entry" in f.body(), f
 
 
@@ -104,5 +102,5 @@ class TestTransmission:
 
         self.confirm_subscription()
 
-        client.say("1900.01.01-confirm-abc123@localhost", "Unexpected logs should be dropped.")
+        client.say("1900.01.01-abc123@localhost", "Unexpected logs should be dropped.")
         assert queue().count() == 0, "Accepting unexpected logs?!"
