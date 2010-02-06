@@ -2,6 +2,8 @@ import jinja2
 import logging
 import logging.config
 
+from apscheduler.scheduler import Scheduler
+
 from lamson import confirm, view
 from lamson.routing import Router
 from lamson.server import Relay
@@ -20,6 +22,8 @@ settings.receiver = None
 settings.confirm = confirm.ConfirmationEngine(
     settings.confirmation_config['queue'],
     confirm_storage)
+
+settings.scheduler = Scheduler()
 
 Router.defaults(**settings.router_defaults)
 Router.load(settings.handlers)

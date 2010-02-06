@@ -2,6 +2,8 @@ import jinja2
 import logging
 import logging.config
 
+from apscheduler.scheduler import Scheduler
+
 from lamson import confirm, view, queue
 from lamson.routing import Router
 from lamson.server import Relay, SMTPReceiver
@@ -22,6 +24,8 @@ settings.confirm = confirm.ConfirmationEngine(
     settings.confirmation_config['queue'],
     confirm_storage)
 
+settings.scheduler = Scheduler()
+
 Router.defaults(**settings.router_defaults)
 Router.load(settings.handlers)
 Router.RELOAD = True
@@ -31,3 +35,5 @@ Router.UNDELIVERABLE_QUEUE = queue.Queue('run/undeliverable')
 view.LOADER = jinja2.Environment(
     loader=jinja2.PackageLoader(settings.template_config['dir'],
                                 settings.template_config['module']))
+
+settings.scheduler.start()

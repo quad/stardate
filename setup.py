@@ -19,6 +19,7 @@ setup(
 
     install_requires=[
         'lamson',
+        'apscheduler',
     ],
 
     tests_require=['nose'],
