@@ -20,6 +20,13 @@ REMINDER_QUOTES = [l.strip()
                    for l in resource_stream(__name__, 'data/reminder_quotes.txt')]
 
 
+def munge_for_forwarding(message):
+    def _(k):
+        if k in message: del message[k]
+
+    map(_, ('Delivered-To', 'X-Original-To'))
+    message['to'] = BLOG_ADDR
+
 @route('punchit@(host)')
 def START(message, host):
     quotes = WELCOME_QUOTES
@@ -33,7 +40,8 @@ def CONFIRMING(message, id_number, host):
     original = confirm.verify('punchit', message['from'], id_number)
 
     if original:
-        original['to'] = BLOG_ADDR
+        munge_for_forwarding(original)
+
         relay.deliver(original)
 
         welcome = view.respond(locals(),
@@ -58,9 +66,9 @@ def LOG(message, date, id_number, host):
 
     if id_number == check:
         d = datetime.datetime.strptime(date, '%Y.%m.%d')
-
         message['date'] = d.strftime('%a, %d %b %Y %H:%M:%S +0000')
-        message['to'] = BLOG_ADDR
+
+        munge_for_forwarding(message)
 
         relay.deliver(message)
 
