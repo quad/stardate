@@ -5,7 +5,7 @@ import logging
 import sqlite3
 import threading
 
-from contextlib import nested
+from contextlib import contextmanager
 
 import lamson.confirm
 import lamson.routing
@@ -13,9 +13,11 @@ import lamson.routing
 from lamson.routing import ROUTE_FIRST_STATE
 
 
+_connection_locks = {}
 _connection_pool = threading.local()
 _connection_pool.dbs = {}
 
+@contextmanager
 def _get_connection(self):
     if not hasattr(_connection_pool, 'dbs'):
         _connection_pool.dbs = {}
@@ -26,9 +28,17 @@ def _get_connection(self):
         if self.database_path == ':memory:':
             logging.warning('Multithreaded access on an in-memory sqlite database.')
 
-    return _connection_pool.dbs.setdefault(
-        self.database_path,
-        sqlite3.connect(self.database_path))
+    with _connection_locks.setdefault(self.database_path, threading.RLock()):
+        conn = _connection_pool.dbs.setdefault(
+            self.database_path,
+            sqlite3.connect(self.database_path))
+
+        try:
+            yield conn
+            conn.commit()
+        except:
+            conn.rollback()
+            raise
 
 
 class ConfirmationStorage(lamson.confirm.ConfirmationStorage):
@@ -54,12 +64,12 @@ class ConfirmationStorage(lamson.confirm.ConfirmationStorage):
 
 
     def clear(self):
-        with nested(self.lock, self.connection) as (lock, conn):
+        with self.connection as conn:
             conn.execute('DELETE FROM confirmations')
 
 
     def get(self, target, from_address):
-        with nested(self.lock, self.connection) as (lock, conn):
+        with self.connection as conn:
             c = conn.execute(
                 'SELECT expected_secret, pending_message_id FROM confirmations'
                 ' WHERE target=? AND from_address=? LIMIT 1',
@@ -68,14 +78,14 @@ class ConfirmationStorage(lamson.confirm.ConfirmationStorage):
 
 
     def delete(self, target, from_address):
-        with nested(self.lock, self.connection) as (lock, conn):
+        with self.connection as conn:
             conn.execute(
                 'DELETE FROM confirmations WHERE target=? AND from_address=?',
                 (target, from_address))
 
 
     def store(self, target, from_address, expected_secret, pending_message_id):
-        with nested(self.lock, self.connection) as (lock, conn):
+        with self.connection as conn:
             conn.execute(
                 'INSERT OR REPLACE INTO confirmations'
                 ' (target, from_address, expected_secret, pending_message_id)'
@@ -103,7 +113,7 @@ class ReminderDatesStorage:
 
 
     def get(self, address):
-        with nested(self.lock, self.connection) as (lock, conn):
+        with self.connection as conn:
             d = conn.execute('SELECT year, month, day FROM reminders'
                              ' WHERE address=? LIMIT 1', (address,)).fetchone()
 
@@ -111,7 +121,7 @@ class ReminderDatesStorage:
 
 
     def set(self, address, date):
-        with nested(self.lock, self.connection) as (lock, conn):
+        with self.connection as conn:
             d = conn.execute(
                 'INSERT OR REPLACE INTO reminders (address, year, month, day)'
                 ' VALUES (?, ?, ?, ?)',
@@ -119,7 +129,7 @@ class ReminderDatesStorage:
 
 
     def clear(self):
-        with nested(self.lock, self.connection) as (lock, conn):
+        with self.connection as conn:
             conn.execute('DELETE FROM reminders')
 
 
@@ -145,7 +155,7 @@ class StateStorage(lamson.routing.StateStorage):
 
 
     def get(self, key, sender):
-        with nested(self.lock, self.connection) as (lock, conn):
+        with self.connection as conn:
             c = conn.execute('SELECT state FROM state WHERE key=? AND sender=? LIMIT 1',
                              (key, sender))
             v = c.fetchone()
@@ -153,7 +163,7 @@ class StateStorage(lamson.routing.StateStorage):
 
 
     def set(self, key, sender, state):
-        with nested(self.lock, self.connection) as (lock, conn):
+        with self.connection as conn:
             if state == ROUTE_FIRST_STATE:
                 conn.execute('DELETE FROM state WHERE key=? AND sender=?', (key, sender))
             else:
@@ -162,12 +172,12 @@ class StateStorage(lamson.routing.StateStorage):
 
 
     def clear(self):
-        with nested(self.lock, self.connection) as (lock, conn):
+        with self.connection as conn:
             conn.execute('DELETE FROM state')
 
 
     def active_addresses(self):
-        with nested(self.lock, self.connection) as (lock, conn):
+        with self.connection as conn:
             addrs = conn.execute('SELECT sender FROM state WHERE key=? AND state=?',
                                  ('stardate.handlers', 'LOG'))
 

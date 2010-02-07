@@ -10,15 +10,19 @@ from stardate.storage import _get_connection
 
 
 def test_threaded_access():
+    def _get(path):
+        with _get_connection(path) as c:
+            return c
+
     mock = namedtuple('Storage', 'database_path')(':memory:')
-    db = _get_connection(mock)
+    db = _get(mock)
 
     q = Queue()
-    threading.Thread(target=lambda: q.put(_get_connection(mock))).start()
+    threading.Thread(target=lambda: q.put(_get(mock))).start()
 
     assert db != q.get()
-    assert db == _get_connection(mock)
-    
+    assert db == _get(mock)
+
 
 class TestStellarCartography:
     def setUp(self):
