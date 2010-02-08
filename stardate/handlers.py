@@ -96,7 +96,7 @@ def engage():
                                    'reminder.msg',
                                    From='%(d_str)s-%(id_number)s@%(host)s',
                                    To=addr,
-                                   Subject="Captain's Log, stardate %(d_str)%s")
+                                   Subject="Captain's Log, stardate %(d_str)s")
             relay.deliver(reminder)
 
         d = storage.reminder_storage.get(addr)
