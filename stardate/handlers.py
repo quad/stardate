@@ -105,12 +105,12 @@ def engage():
         d = storage.reminder_storage.get(addr)
 
         if d:
-            logging.info("Crewman %s's back from an away mission %s", addr, d)
-
             while d < today:
+                d += datetime.timedelta(days=1)
+
                 _(d)
 
-                d += datetime.timedelta(days=1)
+                logging.info("Crewman %s reminded of away mission %s", addr, d)
         else:
             logging.info("Crewman %s reporting", addr)
 
