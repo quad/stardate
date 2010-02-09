@@ -97,6 +97,22 @@ class TestTransmission:
         assert f['from'] == client.From and "A log entry" in f.body(), f
 
 
+    def test_accepts_logs_odd_addr(self):
+        """Accepts and forwards expected logs from expanded addresses."""
+
+        self.confirm_subscription()
+
+        # Register an expected log.
+        d = datetime.date.today()
+        addr = "%s-%s@localhost" % (d.strftime('%Y.%m.%d'),
+                                    hmac.new(SECRET, client.From).hexdigest())
+
+        client.From = "Kirk <jim@localhost>"
+
+        f = client.say(addr, "A log entry", expect=BLOG_ADDR)
+        assert f['from'] == client.From and "A log entry" in f.body(), f
+
+
     def test_rejects_unexpected_logs(self):
         """Rejects unexpected logs."""
 

@@ -3,6 +3,8 @@ import hmac
 import logging
 import random
 
+from email.utils import parseaddr
+
 from pkg_resources import resource_stream
 
 from lamson import view
@@ -62,7 +64,8 @@ def CONFIRMING(message, id_number, host):
 
 @route("(date)-(id_number)@(host)", date='\d{4}\.\d{2}\.\d{2}', id_number='[a-z0-9]+')
 def LOG(message, date, id_number, host):
-    check = hmac.new(SECRET, message['from']).hexdigest()
+    name, addr = parseaddr(message['from'])
+    check = hmac.new(SECRET, addr).hexdigest()
 
     if id_number == check:
         d = datetime.datetime.strptime(date, '%Y.%m.%d')
