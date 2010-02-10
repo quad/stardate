@@ -1,4 +1,5 @@
 import datetime
+import email.utils
 
 from lamson.testing import RouterConversation, clear_queue, delivered, queue
 
@@ -32,6 +33,16 @@ class TestGoingToWarp:
 
         engage()
         assert delivered("Captain's Log"), "No reminder log delivered."
+
+
+    def test_human_addressing(self):
+        state_storage.set('stardate.handlers', 'spock@localhost', 'LOG')
+
+        engage()
+        message = delivered("Captain's Log")
+        name, addr = email.utils.parseaddr(message['From'])
+
+        assert name == "Stardate", "Reminder log isn't from 'Stardate'"
 
 
     def test_no_double_opening_posting(self):

@@ -97,7 +97,7 @@ def engage():
 
             reminder = view.respond(locals(),
                                    'reminder.msg',
-                                   From='Stardate (%(d_str)s) <%(d_str)s-%(id_number)s@%(host)s>',
+                                   From='Stardate <%(d_str)s-%(id_number)s@%(host)s>',
                                    To=addr,
                                    Subject="Captain's Log, stardate %(d_str)s")
             relay.deliver(reminder)
